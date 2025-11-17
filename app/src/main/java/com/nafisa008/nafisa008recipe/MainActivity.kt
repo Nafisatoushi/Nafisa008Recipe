@@ -95,9 +95,11 @@ class MainActivity : ComponentActivity() {
                         composable("add_recipe") {
                             AddRecipeScreen(
                                 onSaveRecipe = { newRecipe ->
-                                    recipes.add(0, newRecipe)   // add to top
-                                    navController.popBackStack() // go back to previous screen
+                                    recipes.add(0, newRecipe)
+                                    // Do NOT navigate anywhere
                                 }
+
+
                             )
                         }
                         // Edit recipe screen

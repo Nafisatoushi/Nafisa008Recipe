@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -34,7 +35,7 @@ fun AddRecipeScreen(
 ) {
     val context = LocalContext.current
 
-    // sound player
+    // Media player
     val mediaPlayer = remember {
         MediaPlayer.create(context, R.raw.marimba)
     }
@@ -43,6 +44,9 @@ fun AddRecipeScreen(
     var ingredients by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // SOUND TOGGLE STATE
+    var isSoundOn by remember { mutableStateOf(true) }
 
     // image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -66,7 +70,6 @@ fun AddRecipeScreen(
             label = { Text("Recipe Title") },
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
@@ -76,7 +79,6 @@ fun AddRecipeScreen(
             modifier = Modifier.fillMaxWidth(),
             maxLines = 4
         )
-
         Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
@@ -86,7 +88,6 @@ fun AddRecipeScreen(
             modifier = Modifier.fillMaxWidth(),
             maxLines = 5
         )
-
         Spacer(Modifier.height(16.dp))
 
         // Choose Image button
@@ -97,7 +98,6 @@ fun AddRecipeScreen(
         ) {
             Text("Choose Image")
         }
-
         Spacer(Modifier.height(12.dp))
 
         // Preview selected image
@@ -110,32 +110,56 @@ fun AddRecipeScreen(
                     .height(180.dp)
             )
         }
-
         Spacer(Modifier.height(20.dp))
 
+        // SAVE RECIPE
         Button(
             onClick = {
                 if (title.isNotBlank()) {
+
+                    // play sound only if ON
+                    if (isSoundOn) {
+                        mediaPlayer.start()
+                    }
+
                     val recipe = Recipe(
                         title = title,
                         ingredients = ingredients,
                         steps = steps,
-                        imageUri = imageUri?.toString()  // save Uri as String
+                        imageUri = imageUri?.toString()
                     )
 
-                    // play sound
-                    mediaPlayer.start()
-
-                    // send back to MainActivity
                     onSaveRecipe(recipe)
+
+                    // Clear fields
+                    title = ""
+                    ingredients = ""
+                    steps = ""
+                    imageUri = null
                 }
             }
         ) {
             Text("Save Recipe")
         }
+
+        // SOUND TOGGLE BUTTON
+        TextButton(
+            onClick = {
+                isSoundOn = !isSoundOn
+
+                // Handle immediate sound control
+                if (!isSoundOn) {
+                    mediaPlayer.pause()
+                }
+            }
+        ) {
+            Text(
+                if (isSoundOn) "Turn Sound OFF" else "Turn Sound ON"
+            )
+        }
     }
 
-    // clean up player when leaving screen
+    // clean up media player
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer.release()
