@@ -1,6 +1,10 @@
 package com.nafisa008.nafisa008recipe.screens
 
 import android.media.MediaPlayer
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.nafisa008.nafisa008recipe.R
 import com.nafisa008.nafisa008recipe.data.Recipe
 
@@ -29,15 +34,22 @@ fun AddRecipeScreen(
 ) {
     val context = LocalContext.current
 
-    // Remember a MediaPlayer for the save sound
+    // sound player
     val mediaPlayer = remember {
-        MediaPlayer.create(context, R.raw.marimba
-        )
+        MediaPlayer.create(context, R.raw.marimba)
     }
 
     var title by remember { mutableStateOf("") }
     var ingredients by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // image picker launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imageUri = uri
+    }
 
     Column(
         modifier = Modifier
@@ -75,6 +87,30 @@ fun AddRecipeScreen(
             maxLines = 5
         )
 
+        Spacer(Modifier.height(16.dp))
+
+        // Choose Image button
+        Button(
+            onClick = {
+                imagePickerLauncher.launch("image/*")
+            }
+        ) {
+            Text("Choose Image")
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Preview selected image
+        if (imageUri != null) {
+            Image(
+                painter = rememberAsyncImagePainter(imageUri),
+                contentDescription = "Selected recipe image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+            )
+        }
+
         Spacer(Modifier.height(20.dp))
 
         Button(
@@ -83,13 +119,14 @@ fun AddRecipeScreen(
                     val recipe = Recipe(
                         title = title,
                         ingredients = ingredients,
-                        steps = steps
+                        steps = steps,
+                        imageUri = imageUri?.toString()  // save Uri as String
                     )
 
-                    // 🔊 Play the save sound
+                    // play sound
                     mediaPlayer.start()
 
-                    // Send recipe back to MainActivity to add to the list
+                    // send back to MainActivity
                     onSaveRecipe(recipe)
                 }
             }
@@ -98,7 +135,7 @@ fun AddRecipeScreen(
         }
     }
 
-    // Clean up mediaPlayer when this screen is removed
+    // clean up player when leaving screen
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer.release()

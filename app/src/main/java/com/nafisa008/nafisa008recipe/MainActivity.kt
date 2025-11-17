@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.nafisa008.nafisa008recipe.data.Recipe
 import com.nafisa008.nafisa008recipe.screens.AddRecipeScreen
+import com.nafisa008.nafisa008recipe.screens.EditRecipeScreen
 import com.nafisa008.nafisa008recipe.screens.HistoryScreen
 import com.nafisa008.nafisa008recipe.screens.HomeScreen
 import com.nafisa008.nafisa008recipe.screens.RecipeDetailScreen
@@ -68,10 +69,22 @@ class MainActivity : ComponentActivity() {
 
                         // Recipe detail
                         composable("recipe_detail/{index}") { backStackEntry ->
-                            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull()
-                            val recipe = index?.let { i -> recipes.getOrNull(i) }
-                            RecipeDetailScreen(recipe = recipe)
+                            val index = backStackEntry.arguments?.getString("index")?.toInt() ?: -1
+                            val recipe = recipes.getOrNull(index)
+
+                            RecipeDetailScreen(
+                                recipe = recipe,
+                                recipeIndex = index,
+                                onEditClick = { editIndex ->
+                                    navController.navigate("edit_recipe/$editIndex")
+                                },
+                                onDeleteClick = { deleteIndex ->
+                                    recipes.removeAt(deleteIndex)
+                                    navController.popBackStack()   // go back to list
+                                }
+                            )
                         }
+
 
                         // History
                         composable("history") {
@@ -87,6 +100,20 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        // Edit recipe screen
+                        composable("edit_recipe/{index}") { backStackEntry ->
+                            val index = backStackEntry.arguments?.getString("index")?.toInt() ?: -1
+                            val recipe = recipes.getOrNull(index)
+
+                            EditRecipeScreen(
+                                recipe = recipe,
+                                onSaveEditedRecipe = { updatedRecipe ->
+                                    recipes[index] = updatedRecipe   // update list
+                                    navController.popBackStack()    // go back to detail
+                                }
+                            )
+                        }
+
                     }
                 }
             }

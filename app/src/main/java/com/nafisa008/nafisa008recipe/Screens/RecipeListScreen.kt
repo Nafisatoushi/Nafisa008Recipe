@@ -1,10 +1,13 @@
 package com.nafisa008.nafisa008recipe.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Divider
@@ -16,6 +19,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.nafisa008.nafisa008recipe.data.Recipe
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,16 +42,31 @@ fun RecipeListScreen(
                 .fillMaxSize()
         ) {
             itemsIndexed(recipes) { index, recipe ->
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onRecipeClick(index) }
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = recipe.title,
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    // Thumbnail image if available
+                    if (recipe.imageUri != null) {
+                        Image(
+                            painter = rememberAsyncImagePainter(recipe.imageUri),
+                            contentDescription = recipe.title,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .padding(end = 12.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = recipe.title,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
                 Divider()
             }
