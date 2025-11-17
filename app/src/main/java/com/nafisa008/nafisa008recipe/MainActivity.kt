@@ -8,10 +8,13 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.nafisa008.nafisa008recipe.data.Recipe
 import com.nafisa008.nafisa008recipe.screens.AddRecipeScreen
 import com.nafisa008.nafisa008recipe.screens.HistoryScreen
 import com.nafisa008.nafisa008recipe.screens.HomeScreen
@@ -25,7 +28,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             Nafisa008RecipeTheme {
+
                 val navController = rememberNavController()
+
+                // This is the in-memory list – it will reset when app restarts
+                val recipes = remember { mutableStateListOf<Recipe>() }
 
                 Scaffold(
                     topBar = {
@@ -39,6 +46,8 @@ class MainActivity : ComponentActivity() {
                         startDestination = "home",
                         modifier = Modifier.padding(innerPadding)
                     ) {
+
+                        // Home
                         composable("home") {
                             HomeScreen(
                                 onViewRecipes = { navController.navigate("recipe_list") },
@@ -46,21 +55,37 @@ class MainActivity : ComponentActivity() {
                                 onHistory = { navController.navigate("history") }
                             )
                         }
+
+                        // Recipe list
                         composable("recipe_list") {
                             RecipeListScreen(
-                                onRecipeClick = {
-                                    navController.navigate("recipe_detail")
+                                recipes = recipes,
+                                onRecipeClick = { index ->
+                                    navController.navigate("recipe_detail/$index")
                                 }
                             )
                         }
-                        composable("recipe_detail") {
-                            RecipeDetailScreen()
+
+                        // Recipe detail
+                        composable("recipe_detail/{index}") { backStackEntry ->
+                            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull()
+                            val recipe = index?.let { i -> recipes.getOrNull(i) }
+                            RecipeDetailScreen(recipe = recipe)
                         }
+
+                        // History
                         composable("history") {
                             HistoryScreen()
                         }
+
+                        // ➕ Add recipe
                         composable("add_recipe") {
-                            AddRecipeScreen()
+                            AddRecipeScreen(
+                                onSaveRecipe = { newRecipe ->
+                                    recipes.add(0, newRecipe)   // add to top
+                                    navController.popBackStack() // go back to previous screen
+                                }
+                            )
                         }
                     }
                 }

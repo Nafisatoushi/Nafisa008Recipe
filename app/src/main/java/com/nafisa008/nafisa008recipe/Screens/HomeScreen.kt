@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.nafisa008.nafisa008recipe.R
+import com.nafisa008.nafisa008recipe.data.Recipe
 
 @Composable
 fun HomeScreen(
