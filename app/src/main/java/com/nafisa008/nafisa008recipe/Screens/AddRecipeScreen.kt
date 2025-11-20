@@ -119,6 +119,7 @@ fun AddRecipeScreen(
 
                     // play sound only if ON
                     if (isSoundOn) {
+                        mediaPlayer.seekTo(0)   // ⭐ restart from beginning
                         mediaPlayer.start()
                     }
 
@@ -147,7 +148,6 @@ fun AddRecipeScreen(
             onClick = {
                 isSoundOn = !isSoundOn
 
-                // Handle immediate sound control
                 if (!isSoundOn) {
                     mediaPlayer.pause()
                 }
@@ -159,7 +159,6 @@ fun AddRecipeScreen(
         }
     }
 
-    // clean up media player
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer.release()

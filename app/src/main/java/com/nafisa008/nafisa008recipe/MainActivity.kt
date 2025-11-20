@@ -63,9 +63,13 @@ class MainActivity : ComponentActivity() {
                                 recipes = recipes,
                                 onRecipeClick = { index ->
                                     navController.navigate("recipe_detail/$index")
+                                },
+                                onAddRecipeClick = {
+                                    navController.navigate("add_recipe")
                                 }
                             )
                         }
+
 
                         // Recipe detail
                         composable("recipe_detail/{index}") { backStackEntry ->
