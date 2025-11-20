@@ -84,10 +84,29 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onDeleteClick = { deleteIndex ->
                                     recipes.removeAt(deleteIndex)
-                                    navController.popBackStack()   // go back to list
+                                    navController.popBackStack()
+                                },
+                                onDuplicateClick = { dupIndex ->
+                                    navController.navigate("duplicate_recipe/$dupIndex")
+                                }
+                            )
+
+                        }
+
+
+                        // Duplicate recipe → opens AddRecipeScreen with pre-filled data
+                        composable("duplicate_recipe/{index}") { backStackEntry ->
+                            val index = backStackEntry.arguments?.getString("index")?.toInt() ?: -1
+                            val recipe = recipes.getOrNull(index)
+
+                            AddRecipeScreen(
+                                prefillRecipe = recipe,   // IMPORTANT
+                                onSaveRecipe = { newRecipe ->
+                                    recipes.add(0, newRecipe)
                                 }
                             )
                         }
+
 
 
                         // History

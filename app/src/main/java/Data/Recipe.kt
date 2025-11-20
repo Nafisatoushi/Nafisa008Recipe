@@ -4,5 +4,8 @@ data class Recipe(
     val title: String,
     val ingredients: String,
     val steps: String,
-    val imageUri: String? = null   // field for image
+    val imageUri: String? = null,
+
+    // NEW: Multiple tags
+    val tags: List<String> = emptyList()
 )

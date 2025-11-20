@@ -23,7 +23,8 @@ fun RecipeDetailScreen(
     recipe: Recipe?,
     recipeIndex: Int,
     onEditClick: (Int) -> Unit,
-    onDeleteClick: (Int) -> Unit
+    onDeleteClick: (Int) -> Unit,
+    onDuplicateClick: (Int) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -58,6 +59,7 @@ fun RecipeDetailScreen(
         Text(recipe.steps)
         Spacer(Modifier.height(24.dp))
 
+        // BUTTONS ROW
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -68,6 +70,10 @@ fun RecipeDetailScreen(
 
             Button(onClick = { onDeleteClick(recipeIndex) }) {
                 Text("Delete")
+            }
+
+            Button(onClick = { onDuplicateClick(recipeIndex) }) {
+                Text("Duplicate")
             }
         }
     }
