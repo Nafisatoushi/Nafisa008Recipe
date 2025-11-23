@@ -35,12 +35,13 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.nafisa008.nafisa008recipe.R
 import com.nafisa008.nafisa008recipe.data.Recipe
+import com.nafisa008.nafisa008recipe.viewmodel.RecipeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddRecipeScreen(
-    prefillRecipe: Recipe? = null,     // ⭐ NEW: Prefill support for Duplicate + Edit
-    onSaveRecipe: (Recipe) -> Unit
+    viewModel: RecipeViewModel,
+    prefillRecipe: Recipe? = null      // for Duplicate
 ) {
     val context = LocalContext.current
 
@@ -48,27 +49,21 @@ fun AddRecipeScreen(
     val mediaPlayer = remember { MediaPlayer.create(context, R.raw.marimba) }
     var isSoundOn by remember { mutableStateOf(true) }
 
-    // MAIN FIELDS (with prefill support)
+    // MAIN FIELDS
     var title by remember { mutableStateOf(prefillRecipe?.title ?: "") }
     var ingredients by remember { mutableStateOf(prefillRecipe?.ingredients ?: "") }
     var steps by remember { mutableStateOf(prefillRecipe?.steps ?: "") }
     var imageUri by remember {
-        mutableStateOf(
-            prefillRecipe?.imageUri?.let { Uri.parse(it) }
-        )
+        mutableStateOf(prefillRecipe?.imageUri?.let { Uri.parse(it) })
     }
 
-    // TAG LIST
+    // TAGS
     val availableTags = listOf(
-        // Meal type
         "Breakfast", "Lunch", "Dinner", "Snack", "Dessert",
-        // Diet
         "Vegetarian", "Non-Vegetarian", "Vegan", "Halal", "Gluten-free",
-        // Style
         "Healthy", "Quick", "Spicy", "Sweet", "Budget"
     )
 
-    // SELECTED TAGS (with prefill support)
     val selectedTags = remember {
         mutableStateListOf<String>().apply {
             prefillRecipe?.tags?.forEach { add(it) }
@@ -80,9 +75,7 @@ fun AddRecipeScreen(
     // Image picker
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        imageUri = uri
-    }
+    ) { uri -> imageUri = uri }
 
     Column(
         modifier = Modifier
@@ -94,7 +87,7 @@ fun AddRecipeScreen(
             text = if (prefillRecipe == null) "Add New Recipe" else "Duplicate Recipe",
             style = MaterialTheme.typography.titleLarge
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
 
         // TITLE
         OutlinedTextField(
@@ -103,6 +96,7 @@ fun AddRecipeScreen(
             label = { Text("Recipe Title") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(Modifier.height(12.dp))
 
         // INGREDIENTS
@@ -113,6 +107,7 @@ fun AddRecipeScreen(
             modifier = Modifier.fillMaxWidth(),
             maxLines = 4
         )
+
         Spacer(Modifier.height(12.dp))
 
         // STEPS
@@ -123,14 +118,17 @@ fun AddRecipeScreen(
             modifier = Modifier.fillMaxWidth(),
             maxLines = 5
         )
+
         Spacer(Modifier.height(16.dp))
 
-        // IMAGE PICKER
+        // IMAGE BUTTON
         Button(onClick = { imagePickerLauncher.launch("image/*") }) {
             Text("Choose Image")
         }
+
         Spacer(Modifier.height(12.dp))
 
+        // IMAGE PREVIEW
         if (imageUri != null) {
             Image(
                 painter = rememberAsyncImagePainter(imageUri),
@@ -150,13 +148,12 @@ fun AddRecipeScreen(
             onExpandedChange = { dropdownExpanded = !dropdownExpanded }
         ) {
             OutlinedTextField(
-                value = "Select Tags",
+                value = "Select Tags (${selectedTags.size})",
                 onValueChange = {},
                 readOnly = true,
                 modifier = Modifier
                     .menuAnchor()
                     .fillMaxWidth(),
-                label = { Text("Tags") },
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
                 }
@@ -189,12 +186,12 @@ fun AddRecipeScreen(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // SHOW SELECTED TAGS
+        // Selected tags
         if (selectedTags.isNotEmpty()) {
             Text(
-                text = "Selected: " + selectedTags.joinToString(", "),
+                text = "Selected: " + selectedTags.joinToString(),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -203,34 +200,37 @@ fun AddRecipeScreen(
 
         // SAVE BUTTON
         Button(
+            modifier = Modifier.fillMaxWidth(),
             onClick = {
                 if (title.isNotBlank()) {
 
-                    // play save sound
                     if (isSoundOn) mediaPlayer.start()
 
-                    val newRecipe = Recipe(
+                    val recipe = Recipe(
+                        id = 0, // Room auto-generates
                         title = title,
                         ingredients = ingredients,
                         steps = steps,
                         imageUri = imageUri?.toString(),
-                        tags = selectedTags.toList()
+                        tags = selectedTags.toList(),
+                        isFavorite = false
                     )
 
-                    onSaveRecipe(newRecipe)
+                    viewModel.addRecipe(recipe)
 
-                    // CLEAR for new entry
+                    // reset for next new recipe
                     title = ""
                     ingredients = ""
                     steps = ""
                     imageUri = null
                     selectedTags.clear()
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
+            }
         ) {
             Text("Save Recipe")
         }
+
+        Spacer(Modifier.height(10.dp))
 
         // SOUND TOGGLE
         TextButton(
@@ -243,7 +243,6 @@ fun AddRecipeScreen(
         }
     }
 
-    // Clean up sound
     DisposableEffect(Unit) {
         onDispose { mediaPlayer.release() }
     }

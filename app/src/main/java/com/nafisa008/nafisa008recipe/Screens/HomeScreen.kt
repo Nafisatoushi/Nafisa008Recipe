@@ -20,7 +20,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.nafisa008.nafisa008recipe.R
-import com.nafisa008.nafisa008recipe.data.Recipe
 
 @Composable
 fun HomeScreen(
@@ -35,7 +34,7 @@ fun HomeScreen(
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome to Nafisa’s Recipe App", style = MaterialTheme.typography.titleLarge)
+        Text("RecipeTalk", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(20.dp))
 
         // View Recipes Option

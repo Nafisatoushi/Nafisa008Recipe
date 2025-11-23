@@ -29,10 +29,12 @@ fun EditRecipeScreen(
         return
     }
 
+    // STATE
     var title by remember { mutableStateOf(recipe.title) }
     var ingredients by remember { mutableStateOf(recipe.ingredients) }
     var steps by remember { mutableStateOf(recipe.steps) }
-    var imageUri = recipe.imageUri  // images skipped for now (safe)
+    var imageUri = recipe.imageUri         // keep old image
+    var tags by remember { mutableStateOf(recipe.tags) } // later add UI for tags
 
     Column(
         modifier = Modifier
@@ -43,6 +45,7 @@ fun EditRecipeScreen(
         Text("Edit Recipe", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(20.dp))
 
+        // TITLE
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
@@ -52,6 +55,7 @@ fun EditRecipeScreen(
 
         Spacer(Modifier.height(12.dp))
 
+        // INGREDIENTS
         OutlinedTextField(
             value = ingredients,
             onValueChange = { ingredients = it },
@@ -62,6 +66,7 @@ fun EditRecipeScreen(
 
         Spacer(Modifier.height(12.dp))
 
+        // STEPS
         OutlinedTextField(
             value = steps,
             onValueChange = { steps = it },
@@ -72,17 +77,20 @@ fun EditRecipeScreen(
 
         Spacer(Modifier.height(20.dp))
 
+        // SAVE BUTTON
         Button(
             onClick = {
                 onSaveEditedRecipe(
-                    Recipe(
+                    recipe.copy(
                         title = title,
                         ingredients = ingredients,
                         steps = steps,
-                        imageUri = imageUri
+                        imageUri = imageUri,
+                        tags = tags
                     )
                 )
-            }
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Save Changes")
         }
