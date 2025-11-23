@@ -8,13 +8,17 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.nafisa008.nafisa008recipe.data.Recipe
+import com.nafisa008.nafisa008recipe.data.AppDatabase
+import com.nafisa008.nafisa008recipe.data.RecipeRepository
 import com.nafisa008.nafisa008recipe.screens.AddRecipeScreen
 import com.nafisa008.nafisa008recipe.screens.EditRecipeScreen
 import com.nafisa008.nafisa008recipe.screens.HistoryScreen
@@ -22,33 +26,51 @@ import com.nafisa008.nafisa008recipe.screens.HomeScreen
 import com.nafisa008.nafisa008recipe.screens.RecipeDetailScreen
 import com.nafisa008.nafisa008recipe.screens.RecipeListScreen
 import com.nafisa008.nafisa008recipe.ui.theme.Nafisa008RecipeTheme
+import com.nafisa008.nafisa008recipe.viewmodel.RecipeViewModel
+
+class RecipeViewModelFactory(
+    private val repository: RecipeRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(RecipeViewModel::class.java)) {
+            return RecipeViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             Nafisa008RecipeTheme {
 
                 val navController = rememberNavController()
 
-                // This is the in-memory list – it will reset when app restarts
-                val recipes = remember { mutableStateListOf<Recipe>() }
+                // DB + DAO + Repository + ViewModel
+                val db = AppDatabase.getDatabase(applicationContext)
+                val dao = db.recipeDao()
+                val repository = RecipeRepository(dao)
+                val viewModel: RecipeViewModel =
+                    viewModel(factory = RecipeViewModelFactory(repository))
 
                 Scaffold(
                     topBar = {
                         CenterAlignedTopAppBar(
-                            title = { Text("Nafisa’s Recipe App") }
+                            title = { Text("RecipeTalk") }
                         )
                     }
                 ) { innerPadding ->
+
                     NavHost(
                         navController = navController,
                         startDestination = "home",
                         modifier = Modifier.padding(innerPadding)
                     ) {
 
-                        // Home
+                        // HOME
                         composable("home") {
                             HomeScreen(
                                 onViewRecipes = { navController.navigate("recipe_list") },
@@ -57,84 +79,83 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Recipe list
+                        // LIST
                         composable("recipe_list") {
                             RecipeListScreen(
-                                recipes = recipes,
-                                onRecipeClick = { index ->
-                                    navController.navigate("recipe_detail/$index")
+                                recipesFlow = viewModel.recipes,
+                                onRecipeClick = { id ->
+                                    navController.navigate("recipe_detail/$id")
                                 },
-                                onAddRecipeClick = {
-                                    navController.navigate("add_recipe")
+                                onAddRecipeClick = { navController.navigate("add_recipe") },
+                                onFavoriteToggle = { recipe ->
+                                    viewModel.toggleFavorite(recipe)
                                 }
                             )
                         }
 
-
-                        // Recipe detail
-                        composable("recipe_detail/{index}") { backStackEntry ->
-                            val index = backStackEntry.arguments?.getString("index")?.toInt() ?: -1
-                            val recipe = recipes.getOrNull(index)
+                        // DETAIL
+                        composable("recipe_detail/{id}") { backStackEntry ->
+                            val id = backStackEntry.arguments?.getString("id")?.toInt() ?: -1
 
                             RecipeDetailScreen(
-                                recipe = recipe,
-                                recipeIndex = index,
-                                onEditClick = { editIndex ->
-                                    navController.navigate("edit_recipe/$editIndex")
+                                recipeId = id,
+                                recipesFlow = viewModel.recipes,
+                                onEditClick = { editId ->
+                                    navController.navigate("edit_recipe/$editId")
                                 },
-                                onDeleteClick = { deleteIndex ->
-                                    recipes.removeAt(deleteIndex)
+                                onDeleteClick = { recipe ->
+                                    viewModel.deleteRecipe(recipe)
                                     navController.popBackStack()
                                 },
-                                onDuplicateClick = { dupIndex ->
-                                    navController.navigate("duplicate_recipe/$dupIndex")
+                                onDuplicateClick = { recipe ->
+                                    navController.navigate("duplicate_recipe/${recipe.id}")
                                 }
                             )
-
                         }
 
+                        // DUPLICATE
+                        composable("duplicate_recipe/{id}") { backStackEntry ->
+                            val id = backStackEntry.arguments?.getString("id")?.toInt() ?: -1
 
-                        // Duplicate recipe → opens AddRecipeScreen with pre-filled data
-                        composable("duplicate_recipe/{index}") { backStackEntry ->
-                            val index = backStackEntry.arguments?.getString("index")?.toInt() ?: -1
-                            val recipe = recipes.getOrNull(index)
+                            val recipeList by viewModel.recipes.collectAsState()
+                            val recipe = recipeList.firstOrNull { it.id == id }
 
                             AddRecipeScreen(
-                                prefillRecipe = recipe,   // IMPORTANT
-                                onSaveRecipe = { newRecipe ->
-                                    recipes.add(0, newRecipe)
+                                viewModel = viewModel,
+                                prefillRecipe = recipe
+                            )
+                        }
+
+                        // HISTORY / FAVORITES
+                        composable("history") {
+                            HistoryScreen(
+                                recipesFlow = viewModel.recipes,
+                                onRecipeClick = { id ->
+                                    navController.navigate("recipe_detail/$id")
                                 }
                             )
                         }
 
-
-
-                        // History
-                        composable("history") {
-                            HistoryScreen()
-                        }
-
-                        // ➕ Add recipe
+                        // ADD NEW
                         composable("add_recipe") {
                             AddRecipeScreen(
-                                onSaveRecipe = { newRecipe ->
-                                    recipes.add(0, newRecipe)
-                                    // Do NOT navigate anywhere
-                                }
-
-
+                                viewModel = viewModel,
+                                prefillRecipe = null
                             )
                         }
-                        // Edit recipe screen
-                        composable("edit_recipe/{index}") { backStackEntry ->
-                            val index = backStackEntry.arguments?.getString("index")?.toInt() ?: -1
-                            val recipe = recipes.getOrNull(index)
+
+                        // EDIT
+                        composable("edit_recipe/{id}") { backStackEntry ->
+                            val id = backStackEntry.arguments?.getString("id")?.toInt() ?: -1
+
+                            val recipeList by viewModel.recipes.collectAsState()
+                            val recipe = recipeList.firstOrNull { it.id == id }
 
                             EditRecipeScreen(
                                 recipe = recipe,
-                                onSaveEditedRecipe = { updatedRecipe ->
-                                    recipes[index] = updatedRecipe   // update list
-                                    navController.popBackStack()    // go back to detail
+                                onSaveEditedRecipe = { updated ->
+                                    viewModel.updateRecipe(updated)
+                                    navController.popBackStack()
                                 }
                             )
                         }
