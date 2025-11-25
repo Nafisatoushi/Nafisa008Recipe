@@ -3,18 +3,18 @@ package com.nafisa008.nafisa008recipe.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -32,6 +31,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.nafisa008.nafisa008recipe.data.Recipe
 import kotlinx.coroutines.flow.StateFlow
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RecipeDetailScreen(
     recipeId: Int,
@@ -41,151 +41,136 @@ fun RecipeDetailScreen(
     onDuplicateClick: (Recipe) -> Unit
 ) {
     val recipes by recipesFlow.collectAsState()
-
-    // Find recipe by ID
     val recipe = recipes.firstOrNull { it.id == recipeId }
 
     if (recipe == null) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Recipe not found.", style = MaterialTheme.typography.titleLarge)
-        }
+        Text("Recipe not found")
         return
     }
-
-    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
+            .background(Color(0xFFFFFBE6))   // same soft yellow
             .padding(16.dp)
     ) {
 
-        // TITLE
-        Text(
-            text = recipe.title,
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Spacer(Modifier.height(8.dp))
+        // MAIN CARD
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
 
-        // TAGS
-        if (recipe.tags.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                recipe.tags.forEach { tag ->
-                    Box(
+            Column {
+
+                // IMAGE
+                if (recipe.imageUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(recipe.imageUri),
+                        contentDescription = recipe.title,
                         modifier = Modifier
-                            .padding(end = 6.dp, bottom = 4.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFE0E7FF))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            .fillMaxWidth()
+                            .height(220.dp)
+                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Column(modifier = Modifier.padding(20.dp)) {
+
+                    // TITLE
+                    Text(
+                        text = recipe.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color(0xFF4E342E)
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // TAGS
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = tag,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF1D2A5B)
-                        )
+                        recipe.tags.forEach { tag ->
+                            Text(
+                                text = tag,
+                                modifier = Modifier
+                                    .background(
+                                        Color(0xFFE8E8F9),
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                color = Color(0xFF4E4A53)
+                            )
+                        }
                     }
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-        }
 
-        // IMAGE
-        if (recipe.imageUri != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(6.dp)
-            ) {
-                Image(
-                    painter = rememberAsyncImagePainter(recipe.imageUri),
-                    contentDescription = recipe.title,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-            Spacer(Modifier.height(16.dp))
-        }
+                    Spacer(Modifier.height(20.dp))
 
-        // INGREDIENTS
-        Text("Ingredients", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(6.dp))
+                    // INGREDIENTS SECTION
+                    Text(
+                        text = "Ingredients",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF4E342E)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = recipe.ingredients,
+                        color = Color.DarkGray
+                    )
 
-        val ingredientLines = recipe.ingredients.split('\n')
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
+                    Spacer(Modifier.height(20.dp))
 
-        if (ingredientLines.isEmpty()) {
-            Text("No ingredients listed.", color = Color.Gray)
-        } else {
-            ingredientLines.forEach { line ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp)
-                ) {
-                    Text("• ")
-                    Text(line)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // STEPS
-        Text("Steps", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(6.dp))
-
-        val stepLines = recipe.steps.split('\n')
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-
-        if (stepLines.isEmpty()) {
-            Text("No steps listed.", color = Color.Gray)
-        } else {
-            stepLines.forEachIndexed { index, line ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp)
-                ) {
-                    Text("${index + 1}. ")
-                    Text(line)
+                    // STEPS SECTION
+                    Text(
+                        text = "Steps",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF4E342E)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = recipe.steps,
+                        color = Color.DarkGray
+                    )
                 }
             }
         }
 
         Spacer(Modifier.height(24.dp))
 
-        // BUTTONS
+        // BUTTONS ROW
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
 
-            Button(onClick = { onEditClick(recipe.id!!) }) {
-                Text("Edit")
-            }
+            DetailButton("Edit") { onEditClick(recipe.id) }
 
-            Button(onClick = { onDeleteClick(recipe) }) {
-                Text("Delete")
-            }
+            DetailButton("Delete") { onDeleteClick(recipe) }
 
-            Button(onClick = { onDuplicateClick(recipe) }) {
-                Text("Duplicate")
-            }
+            DetailButton("Duplicate") { onDuplicateClick(recipe) }
         }
+    }
+}
 
-        Spacer(Modifier.height(12.dp))
+@Composable
+fun DetailButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFFFD54F) // your yellow
+        ),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Text(
+            text = text,
+            color = Color(0xFF4E342E)
+        )
     }
 }

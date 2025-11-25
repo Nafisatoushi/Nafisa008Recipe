@@ -78,10 +78,17 @@ fun RecipeListScreen(
     ) {
 
         Text(
-            text = "All Recipes",
+            text = "All Recipe",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 12.dp)
+            color = Color(0xFF5D4037),
+            modifier = Modifier
+                .background(
+                    color = Color(0xFFFFE9A3),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 6.dp)
         )
+        Spacer(Modifier.height(20.dp))
 
         // SEARCH BAR
         OutlinedTextField(

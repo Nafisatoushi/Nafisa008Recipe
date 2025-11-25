@@ -39,7 +39,13 @@ fun HistoryScreen(
     val recipes by recipesFlow.collectAsState()
 
     val favoriteRecipes = recipes.filter { it.isFavorite }
-    val recentlyAdded = recipes.sortedByDescending { it.id }.take(10)
+    // Show only recipes added in the last 24 hours
+    val cutoffTime = System.currentTimeMillis() - (24 * 60 * 60 * 1000) // 24 hours
+    val recentlyAdded = recipes
+        .filter { it.createdTime >= cutoffTime }
+        .sortedByDescending { it.createdTime }
+
+
 
     Column(
         modifier = Modifier

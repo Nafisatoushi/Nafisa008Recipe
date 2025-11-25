@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
@@ -20,6 +22,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
@@ -41,15 +45,13 @@ import com.nafisa008.nafisa008recipe.viewmodel.RecipeViewModel
 @Composable
 fun AddRecipeScreen(
     viewModel: RecipeViewModel,
-    prefillRecipe: Recipe? = null      // for Duplicate
+    prefillRecipe: Recipe? = null
 ) {
     val context = LocalContext.current
 
-    // Sound
     val mediaPlayer = remember { MediaPlayer.create(context, R.raw.marimba) }
     var isSoundOn by remember { mutableStateOf(true) }
 
-    // MAIN FIELDS
     var title by remember { mutableStateOf(prefillRecipe?.title ?: "") }
     var ingredients by remember { mutableStateOf(prefillRecipe?.ingredients ?: "") }
     var steps by remember { mutableStateOf(prefillRecipe?.steps ?: "") }
@@ -63,7 +65,6 @@ fun AddRecipeScreen(
         "Vegetarian", "Non-Vegetarian", "Vegan", "Halal", "Gluten-free",
         "Healthy", "Quick", "Spicy", "Sweet", "Budget"
     )
-
     val selectedTags = remember {
         mutableStateListOf<String>().apply {
             prefillRecipe?.tags?.forEach { add(it) }
@@ -72,63 +73,96 @@ fun AddRecipeScreen(
 
     var dropdownExpanded by remember { mutableStateOf(false) }
 
-    // Image picker
-    val imagePickerLauncher = rememberLauncherForActivityResult(
+    // Image Picker
+    val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imageUri = uri }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(Color(0xFFFFFBE6))
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
 
+        // TITLE HEADER
         Text(
             text = if (prefillRecipe == null) "Add New Recipe" else "Duplicate Recipe",
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color(0xFF5D4037),
+            modifier = Modifier
+                .padding(bottom = 12.dp)
+                .background(
+                    color = Color(0xFFFFE9A3),     // soft pale yellow highlight
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 6.dp)
         )
-        Spacer(Modifier.height(16.dp))
 
-        // TITLE
+
+        // TITLE FIELD (Improved)
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
             label = { Text("Recipe Title") },
-            modifier = Modifier.fillMaxWidth()
+            placeholder = { Text("e.g., Creamy Chicken Pasta") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFFFD54F),
+                focusedLabelColor = Color(0xFF8D6E63)
+            )
         )
 
-        Spacer(Modifier.height(12.dp))
+        // INGREDIENTS FIELD (Improved)
 
-        // INGREDIENTS
         OutlinedTextField(
             value = ingredients,
             onValueChange = { ingredients = it },
             label = { Text("Ingredients") },
-            modifier = Modifier.fillMaxWidth(),
-            maxLines = 4
+            placeholder = { Text("List ingredients separated by commas...") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .padding(bottom = 16.dp),
+            maxLines = 10,
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFFFD54F),
+                focusedLabelColor = Color(0xFF8D6E63)
+            )
         )
 
-        Spacer(Modifier.height(12.dp))
+        // STEPS FIELD (Improved)
 
-        // STEPS
         OutlinedTextField(
             value = steps,
             onValueChange = { steps = it },
             label = { Text("Steps") },
-            modifier = Modifier.fillMaxWidth(),
-            maxLines = 5
+            placeholder = { Text("Describe the steps clearly...") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .padding(bottom = 18.dp),
+            maxLines = 12,
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFFFD54F),
+                focusedLabelColor = Color(0xFF8D6E63)
+            )
         )
 
-        Spacer(Modifier.height(16.dp))
-
-        // IMAGE BUTTON
-        Button(onClick = { imagePickerLauncher.launch("image/*") }) {
+        // Image pick
+        Button(
+            onClick = { picker.launch("image/*") },
+            modifier = Modifier.padding(bottom = 12.dp)
+        ) {
             Text("Choose Image")
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        // IMAGE PREVIEW
+        // Preview
         if (imageUri != null) {
             Image(
                 painter = rememberAsyncImagePainter(imageUri),
@@ -136,11 +170,9 @@ fun AddRecipeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
+                    .padding(bottom = 16.dp)
             )
         }
-
-        Spacer(Modifier.height(20.dp))
-
 
         // TAG DROPDOWN
         ExposedDropdownMenuBox(
@@ -151,12 +183,12 @@ fun AddRecipeScreen(
                 value = "Select Tags (${selectedTags.size})",
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
-                }
+                },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
             )
 
             ExposedDropdownMenu(
@@ -188,26 +220,24 @@ fun AddRecipeScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Selected tags
         if (selectedTags.isNotEmpty()) {
             Text(
-                text = "Selected: " + selectedTags.joinToString(),
-                style = MaterialTheme.typography.bodyMedium
+                text = selectedTags.joinToString(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF6D4C41),
+                modifier = Modifier.padding(bottom = 12.dp)
             )
         }
-
-        Spacer(Modifier.height(20.dp))
 
         // SAVE BUTTON
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
                 if (title.isNotBlank()) {
-
                     if (isSoundOn) mediaPlayer.start()
 
                     val recipe = Recipe(
-                        id = 0, // Room auto-generates
+                        id = 0,
                         title = title,
                         ingredients = ingredients,
                         steps = steps,
@@ -215,10 +245,8 @@ fun AddRecipeScreen(
                         tags = selectedTags.toList(),
                         isFavorite = false
                     )
-
                     viewModel.addRecipe(recipe)
 
-                    // reset for next new recipe
                     title = ""
                     ingredients = ""
                     steps = ""
@@ -230,14 +258,12 @@ fun AddRecipeScreen(
             Text("Save Recipe")
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        // SOUND TOGGLE
         TextButton(
             onClick = {
                 isSoundOn = !isSoundOn
                 if (!isSoundOn) mediaPlayer.pause()
-            }
+            },
+            modifier = Modifier.padding(top = 10.dp)
         ) {
             Text(if (isSoundOn) "Turn Sound OFF" else "Turn Sound ON")
         }

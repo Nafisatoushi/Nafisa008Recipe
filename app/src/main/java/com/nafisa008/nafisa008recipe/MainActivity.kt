@@ -186,11 +186,13 @@ class MainActivity : ComponentActivity() {
 
                             EditRecipeScreen(
                                 recipe = recipe,
+                                viewModel = viewModel,   // ← REQUIRED
                                 onSaveEditedRecipe = { updated ->
                                     viewModel.updateRecipe(updated)
                                     navController.popBackStack()
                                 }
                             )
+
                         }
 
                     }
