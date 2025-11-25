@@ -1,5 +1,6 @@
 package com.nafisa008.nafisa008recipe.screens
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.nafisa008.nafisa008recipe.data.Recipe
@@ -42,6 +44,7 @@ fun RecipeDetailScreen(
 ) {
     val recipes by recipesFlow.collectAsState()
     val recipe = recipes.firstOrNull { it.id == recipeId }
+    val context = LocalContext.current   // ← Needed for sharing
 
     if (recipe == null) {
         Text("Recipe not found")
@@ -51,19 +54,16 @@ fun RecipeDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBE6))   // same soft yellow
+            .background(Color(0xFFFFFBE6))
             .padding(16.dp)
     ) {
 
         // MAIN CARD
         Card(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             elevation = CardDefaults.cardElevation(8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            )
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
 
             Column {
@@ -113,49 +113,71 @@ fun RecipeDetailScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    // INGREDIENTS SECTION
+                    // INGREDIENTS
                     Text(
                         text = "Ingredients",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFF4E342E)
                     )
                     Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = recipe.ingredients,
-                        color = Color.DarkGray
-                    )
+                    Text(text = recipe.ingredients, color = Color.DarkGray)
 
                     Spacer(Modifier.height(20.dp))
 
-                    // STEPS SECTION
+                    // STEPS
                     Text(
                         text = "Steps",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFF4E342E)
                     )
                     Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = recipe.steps,
-                        color = Color.DarkGray
-                    )
+                    Text(text = recipe.steps, color = Color.DarkGray)
                 }
             }
         }
 
         Spacer(Modifier.height(24.dp))
 
-        // BUTTONS ROW
+        // BUTTON ROW
+        // ROW 1 – Edit + Delete
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-
             DetailButton("Edit") { onEditClick(recipe.id) }
-
             DetailButton("Delete") { onDeleteClick(recipe) }
-
-            DetailButton("Duplicate") { onDuplicateClick(recipe) }
         }
+
+        Spacer(Modifier.height(16.dp))
+
+// ROW 2 – Duplicate + Share
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            DetailButton("Duplicate") { onDuplicateClick(recipe) }
+
+            DetailButton("Share") {
+                val shareText = """
+            🍽 ${recipe.title}
+
+            🧂 Ingredients:
+            ${recipe.ingredients}
+
+            👩‍🍳 Steps:
+            ${recipe.steps}
+
+            Shared from RecipeTalk!
+        """.trimIndent()
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                }
+                context.startActivity(Intent.createChooser(intent, "Share Recipe via"))
+            }
+        }
+
     }
 }
 
@@ -163,14 +185,9 @@ fun RecipeDetailScreen(
 fun DetailButton(text: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFFFD54F) // your yellow
-        ),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F)),
         shape = RoundedCornerShape(20.dp)
     ) {
-        Text(
-            text = text,
-            color = Color(0xFF4E342E)
-        )
+        Text(text = text, color = Color(0xFF4E342E))
     }
 }
