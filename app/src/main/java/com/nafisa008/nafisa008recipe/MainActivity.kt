@@ -1,5 +1,6 @@
 package com.nafisa008.nafisa008recipe
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,6 +26,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.nafisa008.nafisa008recipe.data.AppDatabase
 import com.nafisa008.nafisa008recipe.data.RecipeRepository
 import com.nafisa008.nafisa008recipe.screens.AddRecipeScreen
@@ -35,6 +39,8 @@ import com.nafisa008.nafisa008recipe.screens.RecipeDetailScreen
 import com.nafisa008.nafisa008recipe.screens.RecipeListScreen
 import com.nafisa008.nafisa008recipe.ui.theme.Nafisa008RecipeTheme
 import com.nafisa008.nafisa008recipe.viewmodel.RecipeViewModel
+import com.nafisa008.nafisa008recipe.worker.ReminderWorker
+import java.util.concurrent.TimeUnit
 
 class RecipeViewModelFactory(
     private val repository: RecipeRepository
@@ -49,8 +55,43 @@ class RecipeViewModelFactory(
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
+
+    // SAFE Notification channel (no API errors)
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                "recipe_channel",
+                "Recipe Reminders",
+                android.app.NotificationManager.IMPORTANCE_HIGH
+            )
+
+            val manager = getSystemService(android.app.NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Create notification channel BEFORE WorkManager
+        createNotificationChannel()
+
+        // Schedule daily reminder worker
+        val request = PeriodicWorkRequestBuilder<ReminderWorker>(
+            1, TimeUnit.DAYS
+        ).build()
+
+        val testRequest = androidx.work.OneTimeWorkRequestBuilder<ReminderWorker>()
+            .build()
+
+        WorkManager.getInstance(this).enqueue(testRequest)
+
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "daily_recipe_reminder",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
 
         setContent {
             Nafisa008RecipeTheme {
@@ -74,28 +115,24 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     modifier = Modifier
                                         .background(
-                                            color = Color(0xFFFFE082),   // soft warm yellow (nice with your theme)
+                                            color = Color(0xFFFFE082),
                                             shape = RoundedCornerShape(18.dp)
                                         )
                                         .padding(horizontal = 20.dp, vertical = 8.dp)
                                 ) {
                                     Text(
                                         text = "RecipeTalk",
-                                        color = Color(0xFF5D4037),  // warm cocoa brown
+                                        color = Color(0xFF5D4037),
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                 }
                             },
                             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                containerColor = Color(0xFFFFFBE6) // SAME as your screen background
+                                containerColor = Color(0xFFFFFBE6)
                             )
                         )
-
-
                     }
-                )
-
-                { innerPadding ->
+                ) { innerPadding ->
 
                     NavHost(
                         navController = navController,
@@ -103,7 +140,6 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
 
-                        // HOME
                         composable("home") {
                             HomeScreen(
                                 onViewRecipes = { navController.navigate("recipe_list") },
@@ -112,7 +148,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // LIST
                         composable("recipe_list") {
                             RecipeListScreen(
                                 recipesFlow = viewModel.recipes,
@@ -126,7 +161,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // DETAIL
                         composable("recipe_detail/{id}") { backStackEntry ->
                             val id = backStackEntry.arguments?.getString("id")?.toInt() ?: -1
 
@@ -146,7 +180,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // DUPLICATE
                         composable("duplicate_recipe/{id}") { backStackEntry ->
                             val id = backStackEntry.arguments?.getString("id")?.toInt() ?: -1
 
@@ -159,7 +192,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // HISTORY / FAVORITES
                         composable("history") {
                             HistoryScreen(
                                 recipesFlow = viewModel.recipes,
@@ -169,7 +201,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // ADD NEW
                         composable("add_recipe") {
                             AddRecipeScreen(
                                 viewModel = viewModel,
@@ -177,7 +208,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // EDIT
                         composable("edit_recipe/{id}") { backStackEntry ->
                             val id = backStackEntry.arguments?.getString("id")?.toInt() ?: -1
 
@@ -186,15 +216,13 @@ class MainActivity : ComponentActivity() {
 
                             EditRecipeScreen(
                                 recipe = recipe,
-                                viewModel = viewModel,   // ← REQUIRED
+                                viewModel = viewModel,
                                 onSaveEditedRecipe = { updated ->
                                     viewModel.updateRecipe(updated)
                                     navController.popBackStack()
                                 }
                             )
-
                         }
-
                     }
                 }
             }
