@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -31,95 +32,71 @@ fun HomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color(0xFFFFFBE6)) // soft yellow
+            .padding(horizontal = 16.dp)
+            .padding(top = 32.dp) // 👉 NOW this fixes the spacing!
     ) {
-        Text("RecipeTalk", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(20.dp))
 
-        // View Recipes Option
+        // ---- VIEW RECIPES ----
+        HomeOptionCard(
+            imageRes = R.drawable.pasta,
+            label = "View Recipes",
+            onClick = onViewRecipes
+        )
+
+        Spacer(Modifier.height(18.dp))
+
+        // ---- ADD RECIPE ----
+        HomeOptionCard(
+            imageRes = R.drawable.home,
+            label = "Add New Recipe",
+            onClick = onAddRecipe
+        )
+
+        Spacer(Modifier.height(18.dp))
+
+        // ---- HISTORY / FAVORITES ----
+        HomeOptionCard(
+            imageRes = R.drawable.biriyani,
+            label = "Favorites / History",
+            onClick = onHistory
+        )
+    }
+}
+
+@Composable
+fun HomeOptionCard(
+    imageRes: Int,
+    label: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = label,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // dark overlay
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .clickable { onViewRecipes() }
-                .background(Color.Gray),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.pasta),
-                contentDescription = "View Recipes",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-            )
-            Text(
-                text = "View Recipes",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.35f))
+        )
 
-        Spacer(Modifier.height(12.dp))
-
-        // Add New Recipe Option
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .clickable { onAddRecipe() }
-                .background(Color.Gray),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.home),
-                contentDescription = "Add New Recipe",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-            )
-            Text(
-                text = "Add New Recipe",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        // Favorites / History Option
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .clickable { onHistory() }
-                .background(Color.Gray),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.biriyani),
-                contentDescription = "Favorites / History",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-            )
-            Text(
-                text = "Favorites / History",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
+        Text(
+            text = label,
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }

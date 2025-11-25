@@ -3,19 +3,27 @@ package com.nafisa008.nafisa008recipe
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.nafisa008.nafisa008recipe.data.AppDatabase
 import com.nafisa008.nafisa008recipe.data.RecipeRepository
@@ -56,13 +64,38 @@ class MainActivity : ComponentActivity() {
                 val viewModel: RecipeViewModel =
                     viewModel(factory = RecipeViewModelFactory(repository))
 
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+
                 Scaffold(
                     topBar = {
                         CenterAlignedTopAppBar(
-                            title = { Text("RecipeTalk") }
+                            title = {
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = Color(0xFFFFE082),   // soft warm yellow (nice with your theme)
+                                            shape = RoundedCornerShape(18.dp)
+                                        )
+                                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "RecipeTalk",
+                                        color = Color(0xFF5D4037),  // warm cocoa brown
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                                containerColor = Color(0xFFFFFBE6) // SAME as your screen background
+                            )
                         )
+
+
                     }
-                ) { innerPadding ->
+                )
+
+                { innerPadding ->
 
                     NavHost(
                         navController = navController,
